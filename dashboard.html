@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>لوحة مصنع الفيديو</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg:#f3f0e8; --card:#ffffff; --ink:#1b1a17; --muted:#5e5a52; --line:#e2ddd1;
+    --accent:#c8481f; --accent-ink:#ffffff; --ok:#1f6f66; --ok-bg:#ddebe6; --ok-ink:#144a43;
+    --warn-bg:#fbe3d6; --warn-ink:#8e3216; --wait-bg:#ede8dc; --wait-ink:#4a463e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#141311; --card:#1d1c19; --ink:#f3f0e8; --muted:#b3ada1; --line:#34312b;
+      --accent:#ff8a5c; --accent-ink:#1b1a17; --ok:#6fc2b6; --ok-bg:#16322e; --ok-ink:#9fe0d6;
+      --warn-bg:#3a2016; --warn-ink:#ffb79a; --wait-bg:#2a2823; --wait-ink:#d8d2c5;
+    }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 "IBM Plex Sans Arabic", system-ui, sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:32px 16px 64px; display:flex; flex-direction:column; gap:20px; }
+  h1, h2, .num { font-family:Cairo, sans-serif; }
+  h1 { margin:0; font-size:clamp(26px, 5vw, 36px); line-height:1.2; font-weight:800; }
+  h2 { margin:0; font-size:20px; font-weight:700; }
+  a { color:var(--accent); }
+  header { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; }
+  .sub { color:var(--muted); font-size:14px; margin-top:4px; }
+  .actions { display:flex; flex-wrap:wrap; gap:10px; }
+  .btn { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 18px; border-radius:12px; font-weight:600; font-size:15px; text-decoration:none; border:1px solid var(--ink); color:var(--ink); background:transparent; }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:20px 22px; }
+  .banner { display:flex; gap:14px; align-items:flex-start; }
+  .banner.ok { background:var(--ok-bg); border-color:transparent; color:var(--ok-ink); }
+  .banner.bad { background:var(--warn-bg); border-color:transparent; color:var(--warn-ink); }
+  .dot { width:12px; height:12px; border-radius:50%; margin-top:7px; flex:none; background:currentColor; }
+  .banner b { display:block; font-size:17px; }
+  .banner code { font-size:13px; white-space:pre-wrap; word-break:break-word; }
+  .kpis { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
+  .kpi .num { font-size:36px; font-weight:800; line-height:1.1; }
+  .kpi .lbl { color:var(--muted); font-size:14px; }
+  .next { display:grid; grid-template-columns:auto 1fr; gap:6px 16px; align-items:center; }
+  .next .when { font-family:Cairo, sans-serif; font-weight:800; font-size:22px; color:var(--accent); }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .chips { display:flex; gap:8px; flex-wrap:wrap; }
+  .chip { min-height:36px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--ink); font:inherit; font-size:14px; cursor:pointer; }
+  .chip[aria-pressed="true"] { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .list { display:flex; flex-direction:column; }
+  .item { display:grid; grid-template-columns:1fr auto; gap:6px 16px; padding:16px 0; border-top:1px solid var(--line); }
+  .item:first-child { border-top:none; }
+  .title { font-weight:600; font-size:17px; }
+  .meta { color:var(--muted); font-size:14px; display:flex; flex-wrap:wrap; gap:4px 14px; }
+  .err { grid-column:1 / -1; color:var(--warn-ink); background:var(--warn-bg); border-radius:10px; padding:8px 12px; font-size:13px; word-break:break-word; }
+  .pill { align-self:start; justify-self:start; padding:3px 12px; border-radius:999px; font-size:13px; font-weight:600; white-space:nowrap; }
+  .pill.published { background:var(--ok-bg); color:var(--ok-ink); }
+  .pill.scheduled { background:var(--wait-bg); color:var(--wait-ink); }
+  .pill.made { background:var(--wait-bg); color:var(--wait-ink); }
+  .pill.failed { background:var(--warn-bg); color:var(--warn-ink); }
+  .empty { color:var(--muted); padding:24px 0; text-align:center; }
+  footer { color:var(--muted); font-size:13px; }
+  @media (max-width:720px) { .kpis { grid-template-columns:repeat(2, minmax(0,1fr)); } .item { grid-template-columns:1fr; } .next { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>مصنع الفيديو اليومي</h1>
+      <div class="sub">قناة <a href="https://www.youtube.com/@GharibaBasHa2e2ya">غريبة بس حقيقية</a> · بيتعمل ٦ الصبح و٣ العصر · بيتنشر ١٢ الضهر و٨ بالليل</div>
+    </div>
+    <nav class="actions" aria-label="إجراءات">
+      <a class="btn primary" href="https://github.com/ahmedbaggio3-cmd/video-factory/actions/workflows/daily.yml" target="_blank" rel="noopener">ولّد فيديو دلوقتي</a>
+      <a class="btn" href="https://studio.youtube.com/" target="_blank" rel="noopener">YouTube Studio</a>
+    </nav>
+  </header>
+
+  <section id="banner" class="card banner" aria-live="polite"><span class="dot"></span><div><b>بيحمّل…</b></div></section>
+
+  <section class="kpis" aria-label="أرقام آخر ٧ أيام">
+    <div class="card kpi"><div class="num" id="k-made">–</div><div class="lbl">فيديو اتعمل (٧ أيام)</div></div>
+    <div class="card kpi"><div class="num" id="k-pub">–</div><div class="lbl">اتنشر (٧ أيام)</div></div>
+    <div class="card kpi"><div class="num" id="k-wait">–</div><div class="lbl">مستني النشر</div></div>
+    <div class="card kpi"><div class="num" id="k-fail">–</div><div class="lbl">فشل (٧ أيام)</div></div>
+  </section>
+
+  <section class="card" id="next-card" hidden>
+    <h2 style="margin-bottom:10px">الفيديو الجاي</h2>
+    <div class="next"><div class="when" id="next-when"></div><div class="title" id="next-title"></div></div>
+  </section>
+
+  <section class="card">
+    <div class="row" style="margin-bottom:8px">
+      <h2>كل الفيديوهات</h2>
+      <div class="chips" role="group" aria-label="فلتر">
+        <button class="chip" data-f="all" aria-pressed="true">الكل</button>
+        <button class="chip" data-f="scheduled" aria-pressed="false">مستني النشر</button>
+        <button class="chip" data-f="published" aria-pressed="false">اتنشر</button>
+        <button class="chip" data-f="failed" aria-pressed="false">فشل</button>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <footer id="foot">البيانات بتتحدث بعد كل تشغيل. الصفحة بتعمل تحديث لوحدها كل ٥ دقايق.</footer>
+</main>
+
+<script>
+const TZ = "Africa/Cairo";
+const STEP = { script: "كتابة السكريبت", voice: "الصوت", footage: "اللقطات", render: "المونتاج", upload: "الرفع" };
+const LABEL = { published: "اتنشر", scheduled: "مستني النشر", made: "اتعمل (من غير رفع)", failed: "فشل" };
+const fmt = new Intl.DateTimeFormat("ar-EG", { timeZone: TZ, weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
+const rel = new Intl.RelativeTimeFormat("ar-EG", { numeric: "auto" });
+let runs = [], filter = "all";
+
+function ago(d) {
+  const s = (d - Date.now()) / 1000, a = Math.abs(s);
+  if (a < 3600) return rel.format(Math.round(s / 60), "minute");
+  if (a < 86400) return rel.format(Math.round(s / 3600), "hour");
+  return rel.format(Math.round(s / 86400), "day");
+}
+function state(r) {
+  if (r.status === "failed") return "failed";
+  if (r.publish_at) return new Date(r.publish_at) <= Date.now() ? "published" : "scheduled";
+  return "made";
+}
+function el(tag, props = {}, ...kids) {
+  const e = Object.assign(document.createElement(tag), props);
+  kids.flat().forEach(k => k != null && e.append(k));
+  return e;
+}
+
+function render() {
+  const week = Date.now() - 7 * 86400e3;
+  const recent = runs.filter(r => new Date(r.at) >= week);
+  const count = s => recent.filter(r => state(r) === s).length;
+  document.getElementById("k-made").textContent = recent.filter(r => r.status !== "failed").length;
+  document.getElementById("k-pub").textContent = count("published");
+  document.getElementById("k-wait").textContent = runs.filter(r => state(r) === "scheduled").length;
+  document.getElementById("k-fail").textContent = count("failed");
+
+  const banner = document.getElementById("banner");
+  const last = runs[0];
+  banner.className = "card banner " + (!last ? "" : last.status === "failed" ? "bad" : "ok");
+  banner.replaceChildren(el("span", { className: "dot" }), !last
+    ? el("div", {}, el("b", { textContent: "لسه مفيش تشغيلات متسجلة" }), "أول تشغيل هيظهر هنا بعد ما يخلص.")
+    : last.status === "failed"
+      ? el("div", {}, el("b", { textContent: `آخر تشغيل فشل ${ago(new Date(last.at))}` + (last.step ? ` — في خطوة ${STEP[last.step] || last.step}` : "") }),
+           el("code", { textContent: last.error || "" }))
+      : el("div", {}, el("b", { textContent: `آخر تشغيل نجح ${ago(new Date(last.at))}` }), last.title || ""));
+
+  const upcoming = runs.filter(r => state(r) === "scheduled").sort((a, b) => new Date(a.publish_at) - new Date(b.publish_at))[0];
+  document.getElementById("next-card").hidden = !upcoming;
+  if (upcoming) {
+    document.getElementById("next-when").textContent = fmt.format(new Date(upcoming.publish_at));
+    document.getElementById("next-title").textContent = upcoming.title;
+  }
+
+  const list = document.getElementById("list");
+  const shown = runs.filter(r => filter === "all" || state(r) === filter);
+  list.replaceChildren(...(shown.length ? shown.map(r => {
+    const s = state(r);
+    const meta = el("div", { className: "meta" },
+      el("span", { textContent: "اتعمل " + fmt.format(new Date(r.at)) }),
+      r.publish_at && el("span", { textContent: (s === "published" ? "اتنشر " : "هيتنشر ") + fmt.format(new Date(r.publish_at)) }),
+      r.topic && el("span", { textContent: r.topic }),
+      r.duration && el("span", { textContent: `${Math.round(r.duration)} ثانية` }),
+      r.youtube && el("a", { href: r.youtube, target: "_blank", rel: "noopener", textContent: "افتح على يوتيوب" }));
+    return el("article", { className: "item" },
+      el("div", {}, el("div", { className: "title", textContent: r.title || "وقف قبل ما السكريبت يخلص" }), meta),
+      el("span", { className: "pill " + s, textContent: LABEL[s] }),
+      r.error && el("div", { className: "err", textContent: (r.step ? `وقف في: ${STEP[r.step] || r.step} — ` : "") + r.error }));
+  }) : [el("div", { className: "empty", textContent: "مفيش فيديوهات هنا" })]));
+}
+
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.f;
+  document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b));
+  render();
+}));
+
+async function load() {
+  try {
+    const res = await fetch("data/runs.json?ts=" + Date.now(), { cache: "no-store" });
+    runs = res.ok ? await res.json() : [];
+  } catch { runs = []; }
+  render();
+}
+load();
+setInterval(load, 5 * 60e3);
+</script>
+</body>
+</html>
