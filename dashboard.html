@@ -69,10 +69,10 @@
   <header>
     <div>
       <h1>مصنع الفيديو اليومي</h1>
-      <div class="sub">قناة <a href="https://www.youtube.com/@GharibaBasHa2e2ya">غريبة بس حقيقية</a> · بيتعمل ٦ الصبح و٣ العصر · بيتنشر ١٢ الضهر و٨ بالليل</div>
+      <div class="sub">قناة <a id="ch-link" href="https://www.youtube.com/@GharibaBasHa2e2ya">غريبة بس حقيقية</a> · <span id="ch-sched">بيتنشر ١٢ الضهر و٨ بالليل</span></div>
     </div>
     <nav class="actions" aria-label="إجراءات">
-      <a class="btn primary" href="https://github.com/ahmedbaggio3-cmd/video-factory/actions/workflows/daily.yml" target="_blank" rel="noopener">ولّد فيديو دلوقتي</a>
+      <a class="btn primary" id="run-link" href="https://github.com/ahmedbaggio3-cmd/video-factory/actions/workflows/daily.yml" target="_blank" rel="noopener">ولّد فيديو دلوقتي</a>
       <a class="btn" href="https://studio.youtube.com/" target="_blank" rel="noopener">YouTube Studio</a>
     </nav>
   </header>
@@ -181,11 +181,30 @@ document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () =
   render();
 }));
 
-async function load() {
+// ?c=<client_id> → that client's folder; no ?c = this channel's own data/
+const client = new URLSearchParams(location.search).get("c");
+const BASE = client && /^[a-z0-9_-]+$/i.test(client) ? `data/${client}/` : "data/";
+const hourAr = h => h === 12 ? "١٢ الضهر" : h < 12 ? `${h.toLocaleString("ar-EG")} الصبح` : `${(h - 12).toLocaleString("ar-EG")} بالليل`;
+
+async function getJSON(name, fallback) {
   try {
-    const res = await fetch("data/runs.json?ts=" + Date.now(), { cache: "no-store" });
-    runs = res.ok ? await res.json() : [];
-  } catch { runs = []; }
+    const res = await fetch(BASE + name + "?ts=" + Date.now(), { cache: "no-store" });
+    return res.ok ? await res.json() : fallback;
+  } catch { return fallback; }
+}
+
+async function load() {
+  const [data, ch] = await Promise.all([getJSON("runs.json", []), getJSON("channel.json", null)]);
+  runs = data;
+  if (ch) {
+    const link = document.getElementById("ch-link");
+    if (ch.name) link.textContent = ch.name;
+    if (ch.handle) link.href = "https://www.youtube.com/" + ch.handle;
+    if (ch.repo) document.getElementById("run-link").href = `https://github.com/${ch.repo}/actions/workflows/daily.yml`;
+    const hours = [].concat(ch.publish || []);
+    if (hours.length) document.getElementById("ch-sched").textContent = "بيتنشر " + hours.map(hourAr).join(" و");
+    if (ch.name) document.title = "لوحة " + ch.name;
+  }
   render();
 }
 load();
