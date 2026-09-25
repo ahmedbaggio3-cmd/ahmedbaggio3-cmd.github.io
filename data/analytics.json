@@ -1,0 +1,61 @@
+{
+  "updated_at": "2026-09-25T23:21+03:00",
+  "analytics_error": null,
+  "videos": {
+    "CB_ZdPGvAp8": {
+      "video_id": "CB_ZdPGvAp8",
+      "title": "حقيقة صادمة عن خطر الفستق",
+      "published_at": "2026-09-25T12:00:19Z",
+      "duration_iso": "PT19S",
+      "privacy_status": "public",
+      "views": 1095,
+      "likes": 8,
+      "comments": 0,
+      "collected_at": "2026-09-25T23:21+03:00"
+    },
+    "RqAljzUZ5y8": {
+      "video_id": "RqAljzUZ5y8",
+      "title": "لماذا الجزر لونه برتقالي؟",
+      "published_at": "2026-09-25T00:30:57Z",
+      "duration_iso": "PT18S",
+      "privacy_status": "private",
+      "views": 5,
+      "likes": 0,
+      "comments": 0,
+      "collected_at": "2026-09-25T23:21+03:00"
+    },
+    "JGqbW82SPlw": {
+      "video_id": "JGqbW82SPlw",
+      "title": "أكبر متحف في العالم تحت الماء",
+      "published_at": "2026-09-25T17:00:28Z",
+      "duration_iso": "PT21S",
+      "privacy_status": "public",
+      "views": 454,
+      "likes": 11,
+      "comments": 0,
+      "collected_at": "2026-09-25T23:21+03:00"
+    },
+    "MANqySqhsNo": {
+      "video_id": "MANqySqhsNo",
+      "title": "أسرار غريبة عن المحيطات",
+      "published_at": "2026-09-25T16:15:26Z",
+      "duration_iso": "PT14S",
+      "privacy_status": "private",
+      "views": 0,
+      "likes": 0,
+      "comments": 0,
+      "collected_at": "2026-09-25T23:21+03:00"
+    },
+    "zetUAYtXmPQ": {
+      "video_id": "zetUAYtXmPQ",
+      "title": "طعام لا يفسد أبدا عبر التاريخ",
+      "published_at": "2026-09-25T20:17:10Z",
+      "duration_iso": "PT19S",
+      "privacy_status": "private",
+      "views": 0,
+      "likes": 0,
+      "comments": 0,
+      "collected_at": "2026-09-25T23:21+03:00"
+    }
+  }
+}
