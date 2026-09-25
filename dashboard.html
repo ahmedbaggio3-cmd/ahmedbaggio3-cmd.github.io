@@ -60,8 +60,26 @@
   .pill.made { background:var(--wait-bg); color:var(--wait-ink); }
   .pill.failed { background:var(--warn-bg); color:var(--warn-ink); }
   .empty { color:var(--muted); padding:24px 0; text-align:center; }
+  .stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; margin:12px 0 16px; }
+  .stat { background:var(--bg); border-radius:14px; padding:12px 14px; }
+  .stat .num { font-size:26px; font-weight:800; line-height:1.2; }
+  .stat .lbl { color:var(--muted); font-size:13px; }
+  .tbl-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; min-width:640px; }
+  th { text-align:right; color:var(--muted); font-weight:500; font-size:13px; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  td { padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:middle; font-variant-numeric:tabular-nums; }
+  tr:last-child td { border-bottom:none; }
+  td.n { white-space:nowrap; }
+  td.t a { color:var(--ink); text-decoration:none; font-weight:600; }
+  td.t a:hover { text-decoration:underline; }
+  .badge { display:inline-block; margin-inline-start:8px; padding:1px 8px; border-radius:999px; font-size:12px; background:var(--ok-bg); color:var(--ok-ink); }
+  .badge.low { background:var(--warn-bg); color:var(--warn-ink); }
+  .bar { display:flex; align-items:center; gap:8px; }
+  .bar i { display:block; height:6px; width:60px; border-radius:3px; background:var(--line); overflow:hidden; }
+  .bar i b { display:block; height:100%; background:var(--ok); }
+  .views { color:var(--ink); font-weight:600; }
   footer { color:var(--muted); font-size:13px; }
-  @media (max-width:720px) { .kpis { grid-template-columns:repeat(2, minmax(0,1fr)); } .item { grid-template-columns:1fr; } .next { grid-template-columns:1fr; } }
+  @media (max-width:720px) { .stats { grid-template-columns:repeat(2, minmax(0,1fr)); } .kpis { grid-template-columns:repeat(2, minmax(0,1fr)); } .item { grid-template-columns:1fr; } .next { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -91,6 +109,26 @@
     <div class="next"><div class="when" id="next-when"></div><div class="title" id="next-title"></div></div>
   </section>
 
+  <section class="card" id="perf" hidden>
+    <div class="row">
+      <h2>أداء الفيديوهات</h2>
+      <span class="sub" id="perf-upd"></span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="p-views">–</div><div class="lbl">مشاهدات</div></div>
+      <div class="stat"><div class="num" id="p-likes">–</div><div class="lbl">لايكات</div></div>
+      <div class="stat"><div class="num" id="p-pct">–</div><div class="lbl">متوسط نسبة المشاهدة</div></div>
+      <div class="stat"><div class="num" id="p-subs">–</div><div class="lbl">مشتركين جداد</div></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>الفيديو</th><th>مشاهدات</th><th>لايكات</th><th>كومنتات</th><th>نسبة المشاهدة</th><th>متوسط المدة</th><th>مشتركين</th></tr></thead>
+        <tbody id="perf-body"></tbody>
+      </table>
+    </div>
+    <div class="sub" style="margin-top:10px">نسبة المشاهدة ومدتها بيظهروا بعد يوم أو يومين من النشر. أكتر من ٨٠٪ يبقى الهوك شغال كويس.</div>
+  </section>
+
   <section class="card">
     <div class="row" style="margin-bottom:8px">
       <h2>كل الفيديوهات</h2>
@@ -113,7 +151,9 @@ const STEP = { script: "كتابة السكريبت", voice: "الصوت", foota
 const LABEL = { published: "اتنشر", scheduled: "مستني النشر", made: "اتعمل (من غير رفع)", failed: "فشل" };
 const fmt = new Intl.DateTimeFormat("ar-EG", { timeZone: TZ, weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
 const rel = new Intl.RelativeTimeFormat("ar-EG", { numeric: "auto" });
-let runs = [], filter = "all";
+let runs = [], filter = "all", stats = {};
+const nf = new Intl.NumberFormat("ar-EG");
+const vidId = url => (url || "").split("?")[0].split("/").pop();
 
 function ago(d) {
   const s = (d - Date.now()) / 1000, a = Math.abs(s);
@@ -167,12 +207,43 @@ function render() {
       r.publish_at && el("span", { textContent: (s === "published" ? "اتنشر " : "هيتنشر ") + fmt.format(new Date(r.publish_at)) }),
       r.topic && el("span", { textContent: r.topic }),
       r.duration && el("span", { textContent: `${Math.round(r.duration)} ثانية` }),
+      stats[vidId(r.youtube)] && el("span", { className: "views", textContent: `👁 ${nf.format(stats[vidId(r.youtube)].views)} · 👍 ${nf.format(stats[vidId(r.youtube)].likes)}` }),
       r.youtube && el("a", { href: r.youtube, target: "_blank", rel: "noopener", textContent: "افتح على يوتيوب" }));
     return el("article", { className: "item" },
       el("div", {}, el("div", { className: "title", textContent: r.title || "وقف قبل ما السكريبت يخلص" }), meta),
       el("span", { className: "pill " + s, textContent: LABEL[s] }),
       r.error && el("div", { className: "err", textContent: (r.step ? `وقف في: ${STEP[r.step] || r.step} — ` : "") + r.error }));
   }) : [el("div", { className: "empty", textContent: "مفيش فيديوهات هنا" })]));
+}
+
+function renderPerf(a) {
+  const vids = Object.values(a?.videos || {}).filter(v => v.privacy_status === "public")
+    .sort((x, y) => y.views - x.views);
+  document.getElementById("perf").hidden = !vids.length;
+  if (!vids.length) return;
+  const sum = k => vids.reduce((t, v) => t + (v[k] || 0), 0);
+  const withPct = vids.filter(v => v.average_view_percentage != null);
+  document.getElementById("p-views").textContent = nf.format(sum("views"));
+  document.getElementById("p-likes").textContent = nf.format(sum("likes"));
+  document.getElementById("p-pct").textContent = withPct.length
+    ? nf.format(Math.round(withPct.reduce((t, v) => t + v.average_view_percentage, 0) / withPct.length)) + "٪" : "–";
+  document.getElementById("p-subs").textContent = withPct.length ? nf.format(sum("subscribers_gained")) : "–";
+  if (a.updated_at) document.getElementById("perf-upd").textContent = "آخر تحديث " + ago(new Date(a.updated_at));
+  const dash = "–";
+  document.getElementById("perf-body").replaceChildren(...vids.map((v, i) => {
+    const pct = v.average_view_percentage;
+    const badge = vids.length > 2 && i === 0 ? el("span", { className: "badge", textContent: "الأعلى" })
+      : vids.length > 2 && i === vids.length - 1 ? el("span", { className: "badge low", textContent: "الأقل" }) : null;
+    return el("tr", {},
+      el("td", { className: "t" }, el("a", { href: `https://youtube.com/shorts/${v.video_id}`, target: "_blank", rel: "noopener", textContent: v.title }), badge),
+      el("td", { className: "n views", textContent: nf.format(v.views) }),
+      el("td", { className: "n", textContent: nf.format(v.likes) }),
+      el("td", { className: "n", textContent: nf.format(v.comments) }),
+      el("td", { className: "n" }, pct == null ? dash : el("span", { className: "bar" },
+        el("i", {}, el("b", { style: `width:${Math.min(pct, 100)}%` })), nf.format(Math.round(pct)) + "٪")),
+      el("td", { className: "n", textContent: v.average_view_duration == null ? dash : nf.format(Math.round(v.average_view_duration)) + " ث" }),
+      el("td", { className: "n", textContent: v.subscribers_gained == null ? dash : nf.format(v.subscribers_gained) }));
+  }));
 }
 
 document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
@@ -194,8 +265,10 @@ async function getJSON(name, fallback) {
 }
 
 async function load() {
-  const [data, ch] = await Promise.all([getJSON("runs.json", []), getJSON("channel.json", null)]);
+  const [data, ch, an] = await Promise.all([getJSON("runs.json", []), getJSON("channel.json", null), getJSON("analytics.json", null)]);
   runs = data;
+  stats = an?.videos || {};
+  renderPerf(an);
   if (ch) {
     const link = document.getElementById("ch-link");
     if (ch.name) link.textContent = ch.name;
