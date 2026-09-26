@@ -190,6 +190,14 @@
   .chart .tip { position:absolute; top:0; pointer-events:none; transform:translateX(-50%); padding:6px 10px; border-radius:10px; background:#020611; border:1px solid var(--line); font-size:13px; white-space:nowrap; direction:rtl; }
   .chart .tip b { color:#fff; }
   .chart text { fill:var(--faint); font:12px "Readex Pro", sans-serif; }
+  .launch .verdict-line { margin:0 0 12px; font-size:15px; color:var(--muted); }
+  .launch .verdict-line b { color:#fff; font-weight:600; }
+  .launch .verdict-line .up { color:var(--good); }
+  .launch .verdict-line .down { color:var(--danger); }
+  .launch .legend { margin:8px 0 2px; flex-wrap:wrap; }
+  .launch .legend i { height:3px; border-radius:2px; width:18px; }
+  .board .d1 { margin-top:6px; font-size:12px; color:var(--muted); }
+  .board .d1 b { color:var(--ink); font-weight:500; }
   .seg { display:inline-flex; padding:3px; border-radius:999px; background:var(--panel); border:1px solid var(--line); }
   .seg button { min-height:32px; padding:0 14px; border:0; border-radius:999px; background:transparent; color:var(--muted); font:500 13px "Readex Pro", sans-serif; cursor:pointer; }
   .seg button[aria-pressed="true"] { background:var(--electric); color:#fff; }
@@ -323,6 +331,23 @@
       </div>
       <div class="chart" id="chart"></div>
       <p class="hint">المشاهدات يوم بيوم. يوتيوب بيجهّز أرقام أي يوم بعد حوالي يومين، فآخر يومين بيظهروا بعدين.</p>
+    </div>
+  </section>
+
+  <section id="launch" hidden aria-labelledby="launch-h">
+    <header>
+      <h2 id="launch-h">أول ٧٢ ساعة لكل فيديو</h2>
+      <p>كل خط فيديو، من لحظة ما نزل. عشان تعرف الفيديو الجديد ماشي أحسن ولا أوحش من المعتاد.</p>
+    </header>
+    <div class="growth launch">
+      <p class="verdict-line" id="l-verdict"></p>
+      <div class="chart" id="l-chart"></div>
+      <div class="legend" id="l-legend">
+        <span><i style="background:#3fb4ff"></i><span id="l-name">أحدث فيديو</span></span>
+        <span><i style="background:#ffd23f"></i>المعتاد (الوسيط)</span>
+        <span><i style="background:#5b6f96"></i>باقي الفيديوهات</span>
+      </div>
+      <p class="hint">الأرقام بتتسجل كل ٣ ساعات تقريبًا، والمنحنى بيوصل النقط ببعض.</p>
     </div>
   </section>
 
@@ -497,7 +522,8 @@ function renderPerf(a) {
       poster(v.video_id, null, true),
       el("div", { className: "t" },
         el("a", { href: `https://youtube.com/shorts/${v.video_id}`, target: "_blank", rel: "noopener", textContent: v.title }),
-        el("div", { className: "bar", title: nf.format(v.views) + " مشاهدة" }, el("i", { style: `width:${Math.max(2, v.views / max * 100)}%` }))),
+        el("div", { className: "bar", title: nf.format(v.views) + " مشاهدة" }, el("i", { style: `width:${Math.max(2, v.views / max * 100)}%` })),
+        viewsAt(v, 24) != null && el("div", { className: "d1 tnum" }, "أول ٢٤ ساعة: ", el("b", { textContent: nf.format(Math.round(viewsAt(v, 24))) }), " مشاهدة")),
       el("div", { className: "side" },
         el("div", { className: "facts tnum" },
           el("span", {}, el("b", { textContent: nf.format(v.views) }), " مشاهدة"),
@@ -580,6 +606,105 @@ function renderPulse(an) {
   }
 }
 
+// views a video had `h` hours after it went public, read off its snapshots
+// (analytics.json → videos[id].series = [[time, views, likes], ...]); null if not there yet
+const hoursIn = (v, t) => (new Date(t) - new Date(v.published_at)) / 3600e3;
+function curve(v) {
+  const pts = (v.series || []).map(([t, views]) => [hoursIn(v, t), views]).filter(([h]) => h >= 0).sort((a, b) => a[0] - b[0]);
+  return pts.length ? [[0, 0], ...pts] : [];
+}
+function viewsAt(v, h) {
+  const c = curve(v);
+  for (let i = 1; i < c.length; i++) if (c[i][0] >= h) {
+    const [h0, v0] = c[i - 1], [h1, v1] = c[i];
+    return v0 + (v1 - v0) * (h - h0) / (h1 - h0 || 1);
+  }
+  return null;
+}
+const median = xs => { const s = xs.slice().sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+
+let launchVids = [];
+function renderLaunch(an) {
+  const vids = Object.values(an?.videos || {}).filter(v => v.privacy_status === "public" && v.published_at)
+    .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+  launchVids = vids.filter(v => curve(v).length > 1);
+  $("launch").hidden = !vids.length;
+  if (!vids.length) return;
+  const latest = launchVids[0], others = launchVids.slice(1);
+  $("l-legend").hidden = !latest;
+  if (!latest) {
+    $("l-verdict").textContent = "";
+    $("l-chart").replaceChildren(el("p", { className: "hint", textContent: "بيتجمّع. المصنع بياخد لقطة من أرقام كل فيديو كل ٣ ساعات، والمنحنيات هتبدأ تظهر بعد أول لقطة." }));
+    return;
+  }
+  $("l-name").textContent = "أحدث فيديو: " + latest.title;
+  const age = Math.min(72, curve(latest).at(-1)[0]);
+  const H = age >= 24 ? 24 : Math.max(1, Math.floor(age));
+  const mine = viewsAt(latest, H), usual = others.map(v => viewsAt(v, H)).filter(x => x != null);
+  const when = H === 24 ? "في أول ٢٤ ساعة" : `في أول ${nf.format(H)} ساعة`;
+  const kids = [el("b", { textContent: latest.title }), ` جاب ${nf.format(Math.round(mine))} مشاهدة ${when}`];
+  if (usual.length) {
+    const med = median(usual), diff = med ? Math.round((mine / med - 1) * 100) : 0;
+    kids.push("، ", Math.abs(diff) < 5 ? el("span", { textContent: "زي المعتاد تقريبًا" })
+      : el("span", { className: diff > 0 ? "up" : "down", textContent: `${diff > 0 ? "أعلى" : "أقل"} من المعتاد بـ ${nf.format(Math.abs(diff))}٪` }),
+      ` (المعتاد ${nf.format(Math.round(med))})`);
+  }
+  $("l-verdict").replaceChildren(...kids);
+  drawLaunch($("l-chart"), latest, others);
+}
+function drawLaunch(box, latest, others) {
+  box.replaceChildren();
+  const W = box.clientWidth || 800, Hh = 240, L = 44, R = 12, T = 16, B = 26, X = 72;
+  const clip = v => curve(v).filter(([h]) => h <= X + 6);
+  const grid = Array.from({ length: X / 3 + 1 }, (_, i) => i * 3);
+  // the usual curve stops where most videos are too young to have reached that hour
+  const med = grid.map(h => { const xs = others.map(v => viewsAt(v, h)).filter(x => x != null); return xs.length >= Math.max(2, Math.ceil(others.length / 2)) ? [h, median(xs)] : null; }).filter(Boolean);
+  const max = Math.max(10, ...[latest, ...others].flatMap(v => clip(v).filter(([h]) => h <= X).map(p => p[1])), ...med.map(p => p[1]));
+  const step = Math.pow(10, Math.floor(Math.log10(max / 3))), top = Math.ceil(max / (step * 3)) * step * 3;
+  const x = h => L + Math.min(h, X) / X * (W - L - R), y = v => T + (Hh - T - B) * (1 - v / top);
+  const path = pts => pts.map(([h, v], i) => `${i ? "L" : "M"}${x(h).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${Hh}`);
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "المشاهدات في أول ٧٢ ساعة لكل فيديو");
+  let g = "";
+  for (let k = 0; k <= 3; k++) {
+    const v = top * k / 3, yy = y(v).toFixed(1);
+    g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="#17284c" stroke-width="1"/><text x="${L - 8}" y="${+yy + 4}" text-anchor="end">${nf.format(v)}</text>`;
+  }
+  [0, 24, 48, 72].forEach(h => g += `<text x="${x(h)}" y="${Hh - 6}" text-anchor="${h ? h === X ? "end" : "middle" : "start"}">${h ? nf.format(h) + " ساعة" : "نزل"}</text>`);
+  g += `<line x1="${x(24)}" x2="${x(24)}" y1="${T}" y2="${y(0)}" stroke="#17284c" stroke-dasharray="3 3"/>`;
+  svg.innerHTML = g;
+  // clip lines at 72h so a video's later snapshots don't run off the edge
+  const cut = pts => { const out = []; for (const p of pts) { if (p[0] <= X) out.push(p); else { const q = out.at(-1); if (q) out.push([X, q[1] + (p[1] - q[1]) * (X - q[0]) / (p[0] - q[0])]); break; } } return out; };
+  const line = (pts, color, w, extra = "") => { const e = document.createElementNS(ns, "path"); e.setAttribute("d", path(pts)); e.setAttribute("fill", "none"); e.setAttribute("stroke", color); e.setAttribute("stroke-width", w); e.setAttribute("stroke-linejoin", "round"); e.setAttribute("stroke-linecap", "round"); if (extra) e.setAttribute("stroke-dasharray", extra); svg.append(e); return e; };
+  others.forEach(v => { const e = line(cut(clip(v)), "#5b6f96", 1.5); e.setAttribute("opacity", ".55"); e.append(Object.assign(document.createElementNS(ns, "title"), { textContent: v.title })); });
+  if (med.length > 1) line(med, "#ffd23f", 2, "5 4");
+  const lp = cut(clip(latest));
+  line(lp, "#3fb4ff", 2.5);
+  const end = lp.at(-1), dot = document.createElementNS(ns, "circle");
+  Object.entries({ cx: x(end[0]), cy: y(end[1]), r: 5, fill: "#3fb4ff", stroke: "#0a1426", "stroke-width": 2 }).forEach(([k, v]) => dot.setAttribute(k, v));
+  svg.append(dot);
+  const xh = document.createElementNS(ns, "line");
+  Object.entries({ y1: T, y2: y(0), stroke: "#8ea3c9", "stroke-dasharray": "3 3", visibility: "hidden" }).forEach(([k, v]) => xh.setAttribute(k, v));
+  svg.append(xh);
+  const tip = el("div", { className: "tip", hidden: true });
+  box.append(svg, tip);
+  const hover = e => {
+    const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
+    const h = Math.max(0, Math.min(X, Math.round((px - L) / (W - L - R) * X)));
+    xh.setAttribute("x1", x(h)); xh.setAttribute("x2", x(h)); xh.setAttribute("visibility", "visible");
+    const a = viewsAt(latest, h), m = med.find(p => p[0] >= h);
+    tip.replaceChildren(el("b", { textContent: `بعد ${nf.format(h)} ساعة` }),
+      document.createTextNode(`  الجديد: ${a == null ? "لسه" : nf.format(Math.round(a))}` + (m ? `، المعتاد: ${nf.format(Math.round(m[1]))}` : "")));
+    tip.hidden = false;
+    tip.style.left = Math.min(Math.max(x(h) / W * r.width, 110), r.width - 110) + "px";
+  };
+  svg.addEventListener("pointermove", hover);
+  svg.addEventListener("pointerdown", hover);
+  svg.addEventListener("pointerleave", () => { tip.hidden = true; xh.setAttribute("visibility", "hidden"); });
+}
+
 let growthData = null, days = 28;
 const fmtDay = new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "short", timeZone: "UTC" });
 function renderGrowth() {
@@ -645,7 +770,7 @@ document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click"
   document.querySelectorAll(".seg button").forEach(c => c.setAttribute("aria-pressed", c === b));
   renderGrowth();
 }));
-let rsz; addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(renderGrowth, 150); });
+let rsz; addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(() => { renderGrowth(); renderLaunch(growthData); }, 150); });
 
 function renderTopics(a) {
   const t = Object.entries(a?.topics || {}).filter(([, v]) => v.active);
@@ -756,7 +881,7 @@ function show(bundle) {
     if (hours.length) { pubHours = hours; $("foot-sched").textContent = "بينزل " + hours.map(hourAr).join(" و") + " بتوقيت القاهرة"; }
   }
   growthData = an || null;
-  renderHeader(); renderPulse(an); renderOnAir(); renderGrowth(); renderPerf(an); renderTopics(an); renderLibrary();
+  renderHeader(); renderPulse(an); renderOnAir(); renderGrowth(); renderLaunch(an); renderPerf(an); renderTopics(an); renderLibrary();
 }
 load();
 setInterval(tick, 1000);
