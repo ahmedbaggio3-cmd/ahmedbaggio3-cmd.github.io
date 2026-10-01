@@ -20,18 +20,22 @@
 <main>
   <nav><a href="/">Home</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></nav>
   <h1>Privacy Policy</h1>
-  <p class="muted">Last updated: September 25, 2026</p>
+  <p class="muted">Last updated: October 1, 2026</p>
 
-  <p>This policy describes how Video Factory ("the app"), a service operated by Baggio Smarts, handles information. The app publishes videos to YouTube channels whose owners have authorized it, including <a href="https://www.youtube.com/@GharibaBasHa2e2ya">@GharibaBasHa2e2ya</a> and the channels of our clients.</p>
+  <p>This policy describes how Video Factory ("the app"), a service operated by Baggio Smarts, handles information. The app publishes videos to YouTube channels and TikTok accounts whose owners have authorized it, including <a href="https://www.youtube.com/@GharibaBasHa2e2ya">@GharibaBasHa2e2ya</a> and the channels of our clients.</p>
 
   <h2>YouTube API Services</h2>
   <p>The app uses YouTube API Services to upload videos. By using the app you agree to be bound by the <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a>. Google's handling of data is described in the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.</p>
 
+  <h2>TikTok</h2>
+  <p>The app uses the TikTok Content Posting API to send videos to TikTok accounts whose owners have authorized it through TikTok Login Kit. Use of TikTok is subject to the <a href="https://www.tiktok.com/legal/terms-of-service">TikTok Terms of Service</a> and the <a href="https://www.tiktok.com/legal/privacy-policy">TikTok Privacy Policy</a>.</p>
+
   <h2>Information the app accesses</h2>
   <p>The app requests a single permission, <code>youtube.upload</code>, which lets it upload videos and set their title, description, tags and privacy status on the authorizing account's own channel. It does not read comments, subscribers, watch history, or any other account data, and it does not access data about other YouTube users.</p>
+  <p>On TikTok the app requests <code>user.info.basic</code> (the account's ID, name and avatar, used only to confirm which account is connected), <code>video.upload</code> (to send a video to the account's TikTok inbox as a draft that the owner reviews and posts) and, where enabled, <code>video.publish</code> (to post a video with its caption on the account). It does not read followers, messages, comments or any other account data.</p>
 
   <h2>How information is stored</h2>
-  <p>For each authorized channel we keep one OAuth refresh token, stored as an encrypted secret in a private automation environment operated by Baggio Smarts. It is used only to upload that channel's scheduled videos and is never shared, sold or transferred to anyone. We also keep the channel name and the videos' titles and schedule to show the client their dashboard.</p>
+  <p>For each authorized YouTube channel or TikTok account we keep one OAuth refresh token, stored as an encrypted secret in a private automation environment operated by Baggio Smarts. It is used only to upload that channel's scheduled videos and is never shared, sold or transferred to anyone. We also keep the channel name and the videos' titles and schedule to show the client their dashboard.</p>
 
   <h2>Retention and deletion</h2>
   <p>When a client ends the service or asks us to, we delete their token and schedule data within 7 days. Clients can request deletion at the contact address below.</p>
@@ -40,7 +44,7 @@
   <p>The app and this website do not use cookies, analytics or tracking of any kind.</p>
 
   <h2>Revoking access</h2>
-  <p>Access can be revoked at any time from the Google account's <a href="https://security.google.com/settings/security/permissions">third-party access settings</a>. Once revoked, the stored token stops working immediately, and we delete it.</p>
+  <p>Access can be revoked at any time from the Google account's <a href="https://security.google.com/settings/security/permissions">third-party access settings</a>. On TikTok, remove the app under Settings and privacy → Security → Apps and services permissions. Once revoked, the stored token stops working immediately, and we delete it.</p>
 
   <h2>Contact</h2>
   <p>Questions about this policy: <a href="mailto:ahmedbaggio3@gmail.com">ahmedbaggio3@gmail.com</a></p>
