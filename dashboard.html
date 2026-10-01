@@ -882,7 +882,7 @@ function show(bundle) {
   if (ch) {
     if (ch.name) { $("ch-name").textContent = ch.name; document.title = `مصنع الفيديو · ${ch.name} · باجو سمارت`; }
     if (ch.handle) { handle = ch.handle; $("ch-link").href = "https://www.youtube.com/" + ch.handle; }
-    if (ch.repo) $("run-link").href = `https://github.com/${ch.repo}/actions/workflows/daily.yml`;
+    if (ch.repo) $("run-link").href = `https://github.com/${ch.repo}/actions/workflows/${ch.workflow || "daily.yml"}`;
     if (Array.isArray(ch.make) && ch.make.length) MAKE_HOURS = ch.make;
     const hours = [].concat(ch.publish || []);
     if (hours.length) { pubHours = hours; $("foot-sched").textContent = "بينزل " + hours.map(hourAr).join(" و") + " بتوقيت القاهرة"; }
